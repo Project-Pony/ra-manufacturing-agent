@@ -17,11 +17,11 @@ values
     '00000000-0000-0000-0000-000000000001',
     'authenticated',
     'authenticated',
-    'admin@ramanufacturing.test',
+    'owner@ramanufacturing.test',
     crypt('password123', gen_salt('bf')),
     timezone('utc', now()),
-    '{"role":"admin"}',
-    '{"full_name":"Aarav Khanna"}',
+    '{"role":"business_owner"}',
+    '{"full_name":"Arjun Malhotra"}',
     timezone('utc', now()),
     timezone('utc', now())
   ),
@@ -98,9 +98,9 @@ values
   (
     '10000000-0000-0000-0000-000000000001',
     '00000000-0000-0000-0000-000000000001',
-    '{"sub":"00000000-0000-0000-0000-000000000001","email":"admin@ramanufacturing.test"}',
+    '{"sub":"00000000-0000-0000-0000-000000000001","email":"owner@ramanufacturing.test"}',
     'email',
-    'admin@ramanufacturing.test',
+    'owner@ramanufacturing.test',
     timezone('utc', now()),
     timezone('utc', now()),
     timezone('utc', now())
@@ -156,11 +156,16 @@ insert into public.leads (
   client_email,
   client_whatsapp,
   requirement_details,
+  reference_urls,
   current_stage,
   assigned_sales_manager,
   assigned_sales_executive,
   created_at,
-  status
+  status,
+  sample_dispatch_date,
+  expected_delivery_date,
+  client_response_status,
+  client_response_notes
 )
 values
   (
@@ -170,12 +175,17 @@ values
     '+91-9876543210',
     'sourcing@greenvalenaturals.com',
     '+91-9876543210',
-    'Hair serum sampling for export launch. Need silicone-free base with citrus fragrance and 30 ml retail pack.',
-    2.1,
+    'Hair serum sample kit for export launch. Need silicone-free base, citrus fragrance, and matching premium carton reference.',
+    array['https://example.com/references/hair-serum-reference.pdf'],
+    '7.2',
     '00000000-0000-0000-0000-000000000002',
     '00000000-0000-0000-0000-000000000003',
-    '2026-03-14T01:30:00+00',
-    'active'
+    '2026-03-13T01:30:00+00',
+    'active',
+    null,
+    null,
+    'pending',
+    null
   ),
   (
     '20000000-0000-0000-0000-000000000002',
@@ -184,25 +194,25 @@ values
     '+91-9988776655',
     'ops@northpeakwellness.com',
     '+91-9988776655',
-    'Protein snack sample set for distributor review. Packaging requires matte pouch with bilingual label format.',
-    11,
+    'Protein snack sample set for distributor review. Packaging requires matte pouch and bilingual shipper labels.',
+    array['https://example.com/references/protein-snack-label.jpg'],
+    '9',
     '00000000-0000-0000-0000-000000000002',
     '00000000-0000-0000-0000-000000000003',
-    '2026-03-12T05:00:00+00',
-    'active'
+    '2026-03-10T05:00:00+00',
+    'awaiting_client_approval',
+    '2026-03-13T10:15:00+00',
+    '2026-03-16T12:00:00+00',
+    'pending',
+    null
   )
 on conflict (id) do update
 set
-  lead_code = excluded.lead_code,
-  client_name = excluded.client_name,
-  client_phone = excluded.client_phone,
-  client_email = excluded.client_email,
-  client_whatsapp = excluded.client_whatsapp,
-  requirement_details = excluded.requirement_details,
   current_stage = excluded.current_stage,
-  assigned_sales_manager = excluded.assigned_sales_manager,
-  assigned_sales_executive = excluded.assigned_sales_executive,
-  status = excluded.status;
+  status = excluded.status,
+  sample_dispatch_date = excluded.sample_dispatch_date,
+  expected_delivery_date = excluded.expected_delivery_date,
+  client_response_status = excluded.client_response_status;
 
 insert into public.stage_logs (
   id,
@@ -218,27 +228,40 @@ insert into public.stage_logs (
   notes
 )
 values
-  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 0, 'Lead Received', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-14T01:30:00+00', null, '2026-03-14T01:50:00+00', 'on_time', 'Lead intake completed and lead code generated.'),
-  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 1, 'Catalog Sent to Client', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-14T01:50:00+00', '2026-03-14T03:50:00+00', '2026-03-14T02:10:00+00', 'on_time', 'Catalog shared on WhatsApp.'),
-  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 2, 'Formulation Sample Brief Submitted', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-14T02:15:00+00', '2026-03-14T11:30:00+00', '2026-03-14T02:25:00+00', 'on_time', 'Formulation brief uploaded with sample deadline.'),
-  ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001', 2.1, 'Formulation Brief Approved', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-14T02:25:00+00', '2026-03-14T08:25:00+00', null, 'at_risk', 'Awaiting R&D review.'),
-  ('30000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000002', 0, 'Lead Received', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T05:00:00+00', null, '2026-03-12T05:15:00+00', 'on_time', 'Lead intake recorded.'),
-  ('30000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000002', 1, 'Catalog Sent to Client', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T05:20:00+00', '2026-03-12T07:20:00+00', '2026-03-12T05:40:00+00', 'on_time', 'Catalog shared and shortlisted SKUs confirmed.'),
-  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000002', 2, 'Formulation Sample Brief Submitted', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T05:45:00+00', '2026-03-13T04:30:00+00', '2026-03-12T06:10:00+00', 'on_time', 'R&D brief uploaded.'),
-  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000002', 2.1, 'Formulation Brief Approved', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-12T06:10:00+00', '2026-03-12T12:10:00+00', '2026-03-12T09:00:00+00', 'on_time', 'Approved with vanilla profile adjustment.'),
-  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000002', 3, 'Packaging Sample Brief Submitted', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T09:10:00+00', '2026-03-12T15:00:00+00', '2026-03-12T09:25:00+00', 'on_time', 'Packaging brief uploaded.'),
-  ('30000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000002', 3.1, 'Packaging Brief Approved', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-12T09:25:00+00', '2026-03-12T15:25:00+00', '2026-03-12T11:00:00+00', 'on_time', 'Packaging approved.'),
-  ('30000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000002', 4, 'Client Intimated on Timeline', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T11:10:00+00', '2026-03-12T12:00:00+00', '2026-03-12T11:15:00+00', 'on_time', 'WhatsApp and email update sent.'),
-  ('30000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000002', 5, 'R&D Sample Preparation', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-12T11:20:00+00', '2026-03-13T04:30:00+00', '2026-03-13T03:50:00+00', 'on_time', 'Sample prepared and QC checked.'),
-  ('30000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000002', 6, 'Packaging Preparation', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-12T11:20:00+00', '2026-03-13T06:00:00+00', '2026-03-13T05:10:00+00', 'on_time', 'Packaging ready.'),
-  ('30000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000002', 7, 'R&D Sample Dispatched to Sales Manager', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-13T05:15:00+00', '2026-03-13T06:00:00+00', '2026-03-13T05:25:00+00', 'on_time', 'Dispatch note uploaded.'),
-  ('30000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000002', 7.1, 'Sales Manager Confirms Formulation Sample Received', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T05:25:00+00', '2026-03-13T07:25:00+00', '2026-03-13T05:35:00+00', 'on_time', 'Formulation sample received.'),
-  ('30000000-0000-0000-0000-000000000016', '20000000-0000-0000-0000-000000000002', 8, 'Packaging Sample Dispatched to Sales Manager', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-13T05:35:00+00', '2026-03-13T06:15:00+00', '2026-03-13T05:45:00+00', 'on_time', 'Packaging sample dispatched.'),
-  ('30000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000002', 8.1, 'Sales Manager Confirms Packaging Sample Received', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T05:45:00+00', '2026-03-13T07:45:00+00', '2026-03-13T06:00:00+00', 'on_time', 'Packaging sample received.'),
-  ('30000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000002', 9, 'Sales Manager Instructs Sales Executive to Ship', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T06:10:00+00', '2026-03-13T06:20:00+00', '2026-03-13T06:12:00+00', 'on_time', 'Shipping task assigned.'),
-  ('30000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000002', 9.1, 'Sales Executive Confirms Task Acknowledged', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-13T06:12:00+00', '2026-03-13T12:30:00+00', '2026-03-13T06:15:00+00', 'on_time', 'Task acknowledged.'),
-  ('30000000-0000-0000-0000-000000000020', '20000000-0000-0000-0000-000000000002', 10, 'Sample Labelling Done', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-13T06:15:00+00', '2026-03-13T12:30:00+00', '2026-03-13T07:05:00+00', 'on_time', 'Labels applied per approved format.'),
-  ('30000000-0000-0000-0000-000000000021', '20000000-0000-0000-0000-000000000002', 11, 'Courier Docket Added', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-13T07:05:00+00', '2026-03-14T09:00:00+00', null, 'breached', 'Waiting on outbound docket from courier desk.')
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '0', 'Lead Intake', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T01:30:00+00', '2026-03-13T11:59:00+00', '2026-03-13T01:55:00+00', 'on_time', 'Lead logged from incoming WhatsApp enquiry.'),
+  ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', '1', 'Parallel Brief Submission', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T02:00:00+00', '2026-03-13T11:59:00+00', '2026-03-13T02:20:00+00', 'on_time', 'Formulation and packaging briefs uploaded together.'),
+  ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '2A', 'Formulation Brief Approval', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-13T02:20:00+00', '2026-03-13T08:20:00+00', '2026-03-13T05:10:00+00', 'on_time', 'Approved with committed formulation-ready date.'),
+  ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001', '2B', 'Packaging Brief Approval', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-13T02:20:00+00', '2026-03-13T08:20:00+00', '2026-03-13T04:55:00+00', 'on_time', 'Approved with packaging-ready commitment.'),
+  ('30000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000001', '3', 'Timeline Sent to Client', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T05:15:00+00', '2026-03-13T07:15:00+00', '2026-03-13T05:40:00+00', 'on_time', 'Combined timeline sent via WhatsApp and email.'),
+  ('30000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '4A', 'Formulation Sample Preparation', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-13T05:45:00+00', '2026-03-14T03:00:00+00', '2026-03-14T02:20:00+00', 'on_time', 'Formulation marked ready.'),
+  ('30000000-0000-0000-0000-000000000007', '20000000-0000-0000-0000-000000000001', '4B', 'Packaging Sample Preparation', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-13T05:45:00+00', '2026-03-14T04:00:00+00', '2026-03-14T03:10:00+00', 'on_time', 'Packaging samples marked ready.'),
+  ('30000000-0000-0000-0000-000000000008', '20000000-0000-0000-0000-000000000001', '5A', 'Formulation Sample Dispatched to Sales Manager', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-14T03:15:00+00', '2026-03-14T03:30:00+00', '2026-03-14T03:20:00+00', 'on_time', 'Dispatch note uploaded.'),
+  ('30000000-0000-0000-0000-000000000009', '20000000-0000-0000-0000-000000000001', '5A_CONFIRM', 'Formulation Sample Received by Sales Manager', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-14T03:20:00+00', '2026-03-14T05:20:00+00', '2026-03-14T03:40:00+00', 'on_time', 'Formulation sample received.'),
+  ('30000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000001', '5B', 'Packaging Sample Dispatched to Sales Manager', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-14T03:25:00+00', '2026-03-14T03:40:00+00', '2026-03-14T03:35:00+00', 'on_time', 'Packaging dispatch note uploaded.'),
+  ('30000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000001', '5B_CONFIRM', 'Packaging Sample Received by Sales Manager', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-14T03:35:00+00', '2026-03-14T05:35:00+00', '2026-03-14T03:55:00+00', 'on_time', 'Packaging sample received.'),
+  ('30000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000001', '6', 'Dispatch Task Assigned', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-14T04:00:00+00', '2026-03-14T04:15:00+00', '2026-03-14T04:05:00+00', 'on_time', 'Dispatch task assigned to sales executive.'),
+  ('30000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000001', '6_ACK', 'Dispatch Task Acknowledged', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-14T04:05:00+00', '2026-03-14T09:00:00+00', '2026-03-14T04:20:00+00', 'on_time', 'Dispatch task acknowledged.'),
+  ('30000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000001', '7.1', 'Sample Labelling', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-14T04:20:00+00', '2026-03-14T09:00:00+00', '2026-03-14T04:50:00+00', 'on_time', 'Standard sample labels applied.'),
+  ('30000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000001', '7.2', 'Courier Docket Added', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-14T04:50:00+00', '2026-03-14T09:00:00+00', null, 'at_risk', 'Waiting on courier desk to share the docket number.'),
+  ('30000000-0000-0000-0000-000000000016', '20000000-0000-0000-0000-000000000002', '0', 'Lead Intake', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-10T05:00:00+00', '2026-03-10T11:59:00+00', '2026-03-10T05:25:00+00', 'on_time', 'Lead created from inbound call.'),
+  ('30000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000002', '1', 'Parallel Brief Submission', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-10T05:25:00+00', '2026-03-10T11:59:00+00', '2026-03-10T05:40:00+00', 'on_time', 'Both briefs submitted together.'),
+  ('30000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000002', '2A', 'Formulation Brief Approval', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-10T05:40:00+00', '2026-03-10T11:40:00+00', '2026-03-10T08:30:00+00', 'on_time', 'Approved with production-feasible blend.'),
+  ('30000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000002', '2B', 'Packaging Brief Approval', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-10T05:40:00+00', '2026-03-10T11:40:00+00', '2026-03-10T08:05:00+00', 'on_time', 'Approved with pouch and label recommendations.'),
+  ('30000000-0000-0000-0000-000000000020', '20000000-0000-0000-0000-000000000002', '3', 'Timeline Sent to Client', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-10T08:30:00+00', '2026-03-10T10:30:00+00', '2026-03-10T09:00:00+00', 'on_time', 'Client updated with merged formulation and packaging timelines.'),
+  ('30000000-0000-0000-0000-000000000021', '20000000-0000-0000-0000-000000000002', '4A', 'Formulation Sample Preparation', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-10T09:15:00+00', '2026-03-12T03:00:00+00', '2026-03-12T02:10:00+00', 'on_time', 'Formulation sample prepared.'),
+  ('30000000-0000-0000-0000-000000000022', '20000000-0000-0000-0000-000000000002', '4B', 'Packaging Sample Preparation', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-10T09:15:00+00', '2026-03-12T05:00:00+00', '2026-03-12T03:45:00+00', 'on_time', 'Packaging samples prepared.'),
+  ('30000000-0000-0000-0000-000000000023', '20000000-0000-0000-0000-000000000002', '5A', 'Formulation Sample Dispatched to Sales Manager', 'rnd_manager', '00000000-0000-0000-0000-000000000004', '2026-03-12T03:50:00+00', '2026-03-12T04:00:00+00', '2026-03-12T03:55:00+00', 'on_time', 'Formulation sample dispatched.'),
+  ('30000000-0000-0000-0000-000000000024', '20000000-0000-0000-0000-000000000002', '5A_CONFIRM', 'Formulation Sample Received by Sales Manager', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T03:55:00+00', '2026-03-12T05:55:00+00', '2026-03-12T04:20:00+00', 'on_time', 'Formulation sample received.'),
+  ('30000000-0000-0000-0000-000000000025', '20000000-0000-0000-0000-000000000002', '5B', 'Packaging Sample Dispatched to Sales Manager', 'packaging_manager', '00000000-0000-0000-0000-000000000005', '2026-03-12T04:00:00+00', '2026-03-12T04:15:00+00', '2026-03-12T04:05:00+00', 'on_time', 'Packaging sample dispatched.'),
+  ('30000000-0000-0000-0000-000000000026', '20000000-0000-0000-0000-000000000002', '5B_CONFIRM', 'Packaging Sample Received by Sales Manager', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T04:05:00+00', '2026-03-12T06:05:00+00', '2026-03-12T04:30:00+00', 'on_time', 'Packaging sample received.'),
+  ('30000000-0000-0000-0000-000000000027', '20000000-0000-0000-0000-000000000002', '6', 'Dispatch Task Assigned', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T04:35:00+00', '2026-03-12T05:00:00+00', '2026-03-12T04:40:00+00', 'on_time', 'Dispatch task assigned.'),
+  ('30000000-0000-0000-0000-000000000028', '20000000-0000-0000-0000-000000000002', '6_ACK', 'Dispatch Task Acknowledged', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-12T04:40:00+00', '2026-03-12T09:00:00+00', '2026-03-12T04:55:00+00', 'on_time', 'Acknowledged before cut-off.'),
+  ('30000000-0000-0000-0000-000000000029', '20000000-0000-0000-0000-000000000002', '7.1', 'Sample Labelling', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-12T05:00:00+00', '2026-03-12T09:00:00+00', '2026-03-12T05:30:00+00', 'on_time', 'Labels applied.'),
+  ('30000000-0000-0000-0000-000000000030', '20000000-0000-0000-0000-000000000002', '7.2', 'Courier Docket Added', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-12T05:30:00+00', '2026-03-12T09:00:00+00', '2026-03-12T05:40:00+00', 'on_time', 'Courier docket added.'),
+  ('30000000-0000-0000-0000-000000000031', '20000000-0000-0000-0000-000000000002', '7.3', 'Sample Handed Over to Security', 'sales_executive', '00000000-0000-0000-0000-000000000003', '2026-03-12T05:40:00+00', '2026-03-12T09:00:00+00', '2026-03-12T05:55:00+00', 'on_time', 'Security handover completed.'),
+  ('30000000-0000-0000-0000-000000000032', '20000000-0000-0000-0000-000000000002', '7.4', 'Courier Tracking Reference Stored', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T05:55:00+00', null, '2026-03-12T05:56:00+00', 'on_time', 'Static tracking URL generated from docket.'),
+  ('30000000-0000-0000-0000-000000000033', '20000000-0000-0000-0000-000000000002', '8', 'Sales Tracker Updated', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-12T05:56:00+00', null, '2026-03-12T05:56:00+00', 'on_time', 'Lead moved to awaiting client approval.'),
+  ('30000000-0000-0000-0000-000000000034', '20000000-0000-0000-0000-000000000002', '9', 'Client Approval Received', 'sales_manager', '00000000-0000-0000-0000-000000000002', '2026-03-13T10:15:00+00', null, null, 'on_time', 'Awaiting client decision after sample delivery.')
 on conflict (id) do update
 set
   completed_at = excluded.completed_at,
@@ -251,57 +274,53 @@ insert into public.briefs (
   lead_id,
   brief_type,
   document_url,
-  deadline,
+  requested_deadline,
+  committed_timeline,
   submitted_by,
   approved_by,
   approval_status,
+  review_comment,
   created_at
 )
 values
-  ('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'formulation', 'https://example.com/formulation-brief-001.pdf', '2026-03-16T10:00:00+00', '00000000-0000-0000-0000-000000000002', null, 'pending', '2026-03-14T02:20:00+00'),
-  ('40000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'formulation', 'https://example.com/formulation-brief-002.pdf', '2026-03-13T04:30:00+00', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000004', 'approved', '2026-03-12T05:55:00+00'),
-  ('40000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', 'packaging', 'https://example.com/packaging-brief-002.pdf', '2026-03-13T06:00:00+00', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000005', 'approved', '2026-03-12T09:20:00+00')
+  ('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'formulation', 'https://example.com/formulation-brief-001.pdf', '2026-03-14T03:00:00+00', '2026-03-14T03:00:00+00', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000004', 'approved', 'Approved for citrus active base.', '2026-03-13T02:10:00+00'),
+  ('40000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'packaging', 'https://example.com/packaging-brief-001.pdf', '2026-03-14T04:00:00+00', '2026-03-14T04:00:00+00', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000005', 'approved', 'Approved with premium carton fit check.', '2026-03-13T02:10:00+00'),
+  ('40000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', 'formulation', 'https://example.com/formulation-brief-002.pdf', '2026-03-12T03:00:00+00', '2026-03-12T03:00:00+00', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000004', 'approved', 'Approved for distributor pack sample.', '2026-03-10T05:35:00+00'),
+  ('40000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', 'packaging', 'https://example.com/packaging-brief-002.pdf', '2026-03-12T05:00:00+00', '2026-03-12T05:00:00+00', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000005', 'approved', 'Approved with bilingual label layout.', '2026-03-10T05:35:00+00')
 on conflict (id) do update
 set
   approval_status = excluded.approval_status,
-  approved_by = excluded.approved_by;
+  committed_timeline = excluded.committed_timeline,
+  review_comment = excluded.review_comment;
 
 insert into public.samples (
   id,
   lead_id,
   sample_type,
+  prep_status,
+  committed_ready_at,
   dispatched_by,
   dispatched_at,
   received_confirmed_by,
   received_confirmed_at,
   courier_docket,
-  tracking_number,
+  tracking_reference,
   tracking_url,
-  dispatch_note_url
+  dispatch_note_url,
+  handed_to_security_at
 )
 values
-  ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', 'formulation', '00000000-0000-0000-0000-000000000004', '2026-03-13T05:20:00+00', '00000000-0000-0000-0000-000000000002', '2026-03-13T05:35:00+00', null, null, null, 'https://example.com/formulation-dispatch-note.pdf'),
-  ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'packaging', '00000000-0000-0000-0000-000000000005', '2026-03-13T05:40:00+00', '00000000-0000-0000-0000-000000000002', '2026-03-13T06:00:00+00', null, null, null, 'https://example.com/packaging-dispatch-note.pdf')
+  ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'formulation', 'Ready', '2026-03-14T03:00:00+00', '00000000-0000-0000-0000-000000000004', '2026-03-14T03:20:00+00', '00000000-0000-0000-0000-000000000002', '2026-03-14T03:40:00+00', null, null, null, 'https://example.com/formulation-dispatch-note-001.jpg', null),
+  ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'packaging', 'Ready', '2026-03-14T04:00:00+00', '00000000-0000-0000-0000-000000000005', '2026-03-14T03:35:00+00', '00000000-0000-0000-0000-000000000002', '2026-03-14T03:55:00+00', null, null, null, 'https://example.com/packaging-dispatch-note-001.jpg', null),
+  ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', 'formulation', 'Ready', '2026-03-12T03:00:00+00', '00000000-0000-0000-0000-000000000004', '2026-03-12T03:55:00+00', '00000000-0000-0000-0000-000000000002', '2026-03-12T04:20:00+00', 'DLV-77881234', 'DLV-77881234', 'https://www.delhivery.com/track-v2/package/DLV-77881234', 'https://example.com/formulation-dispatch-note-002.jpg', '2026-03-12T05:55:00+00'),
+  ('50000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000002', 'packaging', 'Ready', '2026-03-12T05:00:00+00', '00000000-0000-0000-0000-000000000005', '2026-03-12T04:05:00+00', '00000000-0000-0000-0000-000000000002', '2026-03-12T04:30:00+00', 'DLV-77881234', 'DLV-77881234', 'https://www.delhivery.com/track-v2/package/DLV-77881234', 'https://example.com/packaging-dispatch-note-002.jpg', '2026-03-12T05:55:00+00')
 on conflict (id) do update
 set
-  received_confirmed_at = excluded.received_confirmed_at,
-  dispatch_note_url = excluded.dispatch_note_url;
-
-insert into public.proforma_invoices (
-  id,
-  lead_id,
-  created_by,
-  document_url,
-  status,
-  created_at,
-  sent_at
-)
-values
-  ('60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', 'https://example.com/pi-draft-002.pdf', 'draft', '2026-03-13T08:45:00+00', null)
-on conflict (id) do update
-set
-  status = excluded.status,
-  document_url = excluded.document_url;
+  prep_status = excluded.prep_status,
+  courier_docket = excluded.courier_docket,
+  tracking_reference = excluded.tracking_reference,
+  tracking_url = excluded.tracking_url,
+  handed_to_security_at = excluded.handed_to_security_at;
 
 insert into public.notifications (
   id,
@@ -313,9 +332,9 @@ insert into public.notifications (
   created_at
 )
 values
-  ('70000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'rnd_manager', '00000000-0000-0000-0000-000000000004', 'Formulation brief uploaded for LEAD-2026-001 and awaiting approval.', false, '2026-03-14T02:26:00+00'),
-  ('70000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'sales_executive', '00000000-0000-0000-0000-000000000003', 'Courier docket is overdue for LEAD-2026-002.', false, '2026-03-14T08:10:00+00'),
-  ('70000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', 'sales_manager', '00000000-0000-0000-0000-000000000002', 'Sales executive flagged courier delay on LEAD-2026-002.', true, '2026-03-14T08:40:00+00')
+  ('70000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'sales_executive', '00000000-0000-0000-0000-000000000003', 'Courier docket is pending for LEAD-2026-001 and the same-day dispatch SLA is at risk.', false, '2026-03-14T05:15:00+00'),
+  ('70000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'sales_manager', '00000000-0000-0000-0000-000000000002', 'Dispatch stage for LEAD-2026-001 is approaching the 6 PM cut-off.', false, '2026-03-14T05:20:00+00'),
+  ('70000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002', 'business_owner', '00000000-0000-0000-0000-000000000001', 'LEAD-2026-002 has been dispatched and is now awaiting client approval.', false, '2026-03-13T10:20:00+00')
 on conflict (id) do update
 set
   is_read = excluded.is_read,

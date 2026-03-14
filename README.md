@@ -1,8 +1,22 @@
-# Sales & Operations Workflow Dashboard
+# Sales Sampling Workflow Dashboard
 
-Phase 1 scaffold for a manufacturing company’s internal sales sampling workflow dashboard.
+Revised Phase 1 scaffold for a manufacturing company’s internal sampling workflow, limited to:
 
-Built with:
+- Lead intake
+- Parallel briefing and approvals
+- Sample preparation
+- Dispatch to client
+- Client approval logging
+
+Out of scope in this version:
+
+- Proforma Invoice creation
+- Bulk order processing
+- Courier API integration
+- WhatsApp automation
+- Payment tracking
+
+## Stack
 
 - Next.js 14 App Router
 - React 18
@@ -11,19 +25,19 @@ Built with:
 
 ## What’s Included
 
-- Role-based login flow with route protection middleware
-- Pipeline board with SLA badges and breached-card highlighting
-- Lead detail slide-over with role-safe client visibility
-- My Tasks view sorted by SLA urgency
-- Sales Tracker for `sales_manager` and `admin`
-- Notifications panel in the top navigation
-- Admin panel scaffold with user directory and audit log
-- Supabase schema, RLS policies, storage bucket setup, and seed data
+- Role-based login flow with middleware protection
+- Revised pipeline board with parallel R&D and Packaging indicators
+- Lead detail slide-over with vertical timeline and side-by-side track status
+- My Tasks view for assigned users only
+- Sales Tracker for `sales_manager` and `business_owner`
+- Notification bell with per-role unread counts
+- Business Owner read-only experience with full client visibility
+- Revised Supabase schema, RLS policies, storage bucket setup, and seed data
 - Demo fallback mode when Supabase env vars are not configured
 
 ## Roles
 
-- `admin`
+- `business_owner`
 - `sales_manager`
 - `sales_executive`
 - `rnd_manager`
@@ -57,13 +71,13 @@ SUPABASE_SERVICE_ROLE_KEY=...
 npm run dev
 ```
 
-The app runs in demo mode automatically if the Supabase env vars are missing.
+The app automatically uses demo data if the Supabase env vars are missing.
 
-## Demo Mode
+## Demo Accounts
 
-If you run without Supabase configured, use these seeded demo accounts in the login screen:
+If you run without Supabase configured, use these demo users on the login screen:
 
-- `admin@ramanufacturing.test`
+- `owner@ramanufacturing.test`
 - `sales.manager@ramanufacturing.test`
 - `sales.exec@ramanufacturing.test`
 - `rnd.manager@ramanufacturing.test`
@@ -88,13 +102,34 @@ If you use the Supabase CLI:
 supabase db reset
 ```
 
-Or apply the files manually in the SQL editor.
+Or run the files manually in the SQL editor.
 
-## Important Data-Security Note
+## Security Notes
 
-The workflow includes sub-stages such as `2.1`, `3.1`, `7.1`, `8.1`, and `9.1`. Because of that, the schema models `current_stage` and `stage_number` as a numeric domain rather than a plain integer.
+- Client name, phone, email, and WhatsApp are masked for every role except `sales_manager` and `business_owner`.
+- The app reads masked lead data from `public.leads_secure` for dashboard queries.
+- `business_owner` is read-only at the UI and RLS levels.
+- Sales Executives only receive task-level access through assigned workflow rows.
 
-Postgres RLS cannot null individual columns on a row. To enforce the “client details visible only to Sales Manager/Admin” rule safely, the app reads from the masked view `public.leads_secure` for dashboard queries. Raw `public.leads` access is restricted to `admin` and `sales_manager`.
+## Data Model Notes
+
+The revised workflow uses parallel and branch-like stage codes such as `2A`, `2B`, `5A_CONFIRM`, and `7.4`, so the schema models stage identifiers as a checked text domain instead of an integer.
+
+The schema includes:
+
+- `users`
+- `leads`
+- `stage_logs`
+- `briefs`
+- `samples`
+- `notifications`
+
+Seed data creates:
+
+- 5 users, one per role
+- 2 revised leads:
+  - one mid-dispatch
+  - one awaiting client approval
 
 ## Project Structure
 
@@ -102,7 +137,6 @@ Postgres RLS cannot null individual columns on a row. To enforce the “client d
 app/
   (auth)/login/
   (dashboard)/
-    admin/
     pipeline/
     tasks/
     tracker/
@@ -122,14 +156,15 @@ types/
   app.ts
 ```
 
-## Seeded Data
+## Verification
 
-The seed creates:
+The current revision has been verified locally with:
 
-- 5 users, one for each role
-- 2 sample leads at different stages
-- stage logs, briefs, sample records, notifications, and one PI draft
+```bash
+npm run lint
+npm run build
+```
 
-## Current Scope
+## Current Scope Note
 
-This phase focuses on the working shell, role-aware views, Supabase schema, and RLS-ready structure. The stage action forms are scaffolded and validated in the UI so they can be connected to final Supabase mutations next without restructuring the app.
+The workflow action forms are aligned to the revised Phase 1 stages and validated in the UI. They remain scaffolded for the final Supabase write-path wiring, so the display, routing, security model, schema, and seed data are updated now without forcing a second structural rewrite later.

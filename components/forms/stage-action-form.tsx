@@ -25,18 +25,22 @@ export function StageActionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const helperText = useMemo(() => {
+    if (stage.systemDriven) {
+      return "This step is system-driven in Phase 1 and does not require a manual action.";
+    }
+
     if (isDemo) {
       return "Demo mode is active. Submitted values are validated in the UI and can be wired to Supabase mutations next.";
     }
 
-    return "This action form is scaffolded for Supabase-backed workflow mutations.";
-  }, [isDemo]);
+    return "This action form is scaffolded for the final Supabase-backed workflow mutations.";
+  }, [isDemo, stage.systemDriven]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!canAct) {
-      toast.error("You do not own this stage.");
+    if (!canAct || stage.systemDriven) {
+      toast.error("This stage is read-only for your role.");
       return;
     }
 
@@ -45,63 +49,71 @@ export function StageActionForm({
 
     try {
       switch (stage.key) {
-        case "1":
-        case "4":
-        case "10":
-        case "12": {
-          const confirmed = formData.get("confirmed");
-          if (!confirmed) {
-            throw new Error("Please confirm the required checkbox before continuing.");
+        case "1": {
+          if (
+            !formData.get("formulationBriefUrl") ||
+            !formData.get("packagingBriefUrl") ||
+            !formData.get("formulationDeadline") ||
+            !formData.get("packagingDeadline")
+          ) {
+            throw new Error("Both briefs and both requested deadlines are required.");
           }
           break;
         }
-        case "2":
-        case "3":
-        case "7":
-        case "8":
-        case "17":
-        case "19": {
-          if (!formData.get("documentUrl")) {
-            throw new Error("Document URL is required for this stage.");
-          }
-          break;
-        }
-        case "2.1":
-        case "3.1": {
-          if (!formData.get("decision")) {
+        case "2A":
+        case "2B": {
+          const decision = formData.get("decision");
+          if (!decision) {
             throw new Error("Select approval or rejection.");
           }
+
+          if (decision === "approved" && !formData.get("committedTimeline")) {
+            throw new Error("Provide the committed timeline when approving a brief.");
+          }
+
+          if (decision === "rejected" && !formData.get("notes")) {
+            throw new Error("Add a rejection reason before submitting.");
+          }
           break;
         }
-        case "5":
-        case "6": {
+        case "3":
+        case "6_ACK":
+        case "7.1":
+        case "7.3": {
+          if (!formData.get("confirmed")) {
+            throw new Error("Confirm the required checkbox before continuing.");
+          }
+          break;
+        }
+        case "4A":
+        case "4B": {
           if (!formData.get("prepStatus")) {
-            throw new Error("Select the preparation status.");
+            throw new Error("Select the current preparation status.");
           }
           break;
         }
-        case "9": {
+        case "5A":
+        case "5B": {
+          if (!formData.get("confirmed")) {
+            throw new Error("Mark the sample as dispatched to Sales Manager.");
+          }
+          break;
+        }
+        case "6": {
           if (!formData.get("salesExecutiveId")) {
-            throw new Error("Assign a sales executive for dispatch.");
+            throw new Error("Assign a sales executive for the dispatch task.");
           }
           break;
         }
-        case "11": {
+        case "7.2": {
           if (!formData.get("courierDocket")) {
             throw new Error("Courier docket number is required.");
           }
           break;
         }
-        case "13": {
-          if (!formData.get("trackingNumber") || !formData.get("trackingUrl")) {
-            throw new Error("Tracking number and URL are both required.");
-          }
-          break;
-        }
-        case "14":
-        case "16": {
-          if (!formData.get("notes")) {
-            throw new Error("Add a note before submitting.");
+        case "9": {
+          if (!formData.get("clientResponse")) {
+            throw new Error("Select the client response outcome.");
           }
           break;
         }
@@ -124,11 +136,10 @@ export function StageActionForm({
     }
   };
 
-  if (stage.key === "15") {
+  if (stage.systemDriven) {
     return (
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-700">
-        Sales Tracker updates automatically when Stage 14 is completed. No manual
-        action is required here.
+      <div className="rounded-3xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-800">
+        {helperText}
       </div>
     );
   }
@@ -141,44 +152,56 @@ export function StageActionForm({
 
       {stage.key === "0" ? (
         <label className="block text-sm font-medium text-slate-700">
-          Lead intake note
+          Intake note
           <textarea
             className={fieldBaseClass}
             name="notes"
-            placeholder="Summarize the enquiry, volume, and sample intent."
+            placeholder="Summarize the enquiry, reference items, and sample ask."
             rows={4}
           />
         </label>
       ) : null}
 
-      {["1", "4", "10", "12"].includes(stage.key) ? (
-        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
-          <input className="mt-1 h-4 w-4 rounded border-slate-300" name="confirmed" type="checkbox" />
-          <span>Confirm the completion step for this stage.</span>
-        </label>
-      ) : null}
-
-      {["2", "3", "7", "8", "17", "19"].includes(stage.key) ? (
+      {stage.key === "1" ? (
         <>
           <label className="block text-sm font-medium text-slate-700">
-            Document URL
+            Formulation brief URL
             <input
               className={fieldBaseClass}
-              name="documentUrl"
-              placeholder="Paste the Supabase Storage signed URL"
+              name="formulationBriefUrl"
+              placeholder="Paste the formulation brief URL"
               type="url"
             />
           </label>
-          {["2", "3"].includes(stage.key) ? (
-            <label className="block text-sm font-medium text-slate-700">
-              Deadline
-              <input className={fieldBaseClass} name="deadline" type="datetime-local" />
-            </label>
-          ) : null}
+          <label className="block text-sm font-medium text-slate-700">
+            Formulation requested deadline
+            <input
+              className={fieldBaseClass}
+              name="formulationDeadline"
+              type="datetime-local"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Packaging brief URL
+            <input
+              className={fieldBaseClass}
+              name="packagingBriefUrl"
+              placeholder="Paste the packaging brief URL"
+              type="url"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Packaging requested deadline
+            <input
+              className={fieldBaseClass}
+              name="packagingDeadline"
+              type="datetime-local"
+            />
+          </label>
         </>
       ) : null}
 
-      {["2.1", "3.1"].includes(stage.key) ? (
+      {["2A", "2B"].includes(stage.key) ? (
         <>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-medium text-slate-700">Decision</p>
@@ -194,18 +217,33 @@ export function StageActionForm({
             </div>
           </div>
           <label className="block text-sm font-medium text-slate-700">
-            Review note
+            Committed timeline
+            <input
+              className={fieldBaseClass}
+              name="committedTimeline"
+              type="datetime-local"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Review comment
             <textarea
               className={fieldBaseClass}
               name="notes"
-              placeholder="Add approval comment or rejection reason."
+              placeholder="Add feasibility note or rejection comment."
               rows={4}
             />
           </label>
         </>
       ) : null}
 
-      {["5", "6"].includes(stage.key) ? (
+      {stage.key === "3" ? (
+        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+          <input className="mt-1 h-4 w-4 rounded border-slate-300" name="confirmed" type="checkbox" />
+          <span>Timeline sent to client via WhatsApp and Email.</span>
+        </label>
+      ) : null}
+
+      {["4A", "4B"].includes(stage.key) ? (
         <label className="block text-sm font-medium text-slate-700">
           Preparation status
           <select className={fieldBaseClass} defaultValue="" name="prepStatus">
@@ -219,7 +257,32 @@ export function StageActionForm({
         </label>
       ) : null}
 
-      {stage.key === "9" ? (
+      {["5A", "5B"].includes(stage.key) ? (
+        <>
+          <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+            <input className="mt-1 h-4 w-4 rounded border-slate-300" name="confirmed" type="checkbox" />
+            <span>Sample dispatched to Sales Manager.</span>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Dispatch note / photo URL
+            <input
+              className={fieldBaseClass}
+              name="documentUrl"
+              placeholder="Paste an optional dispatch-note URL"
+              type="url"
+            />
+          </label>
+        </>
+      ) : null}
+
+      {["5A_CONFIRM", "5B_CONFIRM", "6_ACK", "7.1", "7.3"].includes(stage.key) ? (
+        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+          <input className="mt-1 h-4 w-4 rounded border-slate-300" name="confirmed" type="checkbox" />
+          <span>Confirm completion for this step.</span>
+        </label>
+      ) : null}
+
+      {stage.key === "6" ? (
         <label className="block text-sm font-medium text-slate-700">
           Assign sales executive
           <select className={fieldBaseClass} defaultValue="" name="salesExecutiveId">
@@ -235,53 +298,45 @@ export function StageActionForm({
         </label>
       ) : null}
 
-      {stage.key === "11" ? (
+      {stage.key === "7.2" ? (
         <label className="block text-sm font-medium text-slate-700">
           Courier docket number
           <input
             className={fieldBaseClass}
             name="courierDocket"
-            placeholder="Enter the courier docket number"
+            placeholder="Enter the docket number"
             type="text"
           />
         </label>
       ) : null}
 
-      {stage.key === "13" ? (
+      {stage.key === "9" ? (
         <>
           <label className="block text-sm font-medium text-slate-700">
-            Tracking number
+            Expected delivery date
             <input
               className={fieldBaseClass}
-              name="trackingNumber"
-              placeholder="Enter the tracking number"
-              type="text"
+              name="expectedDeliveryDate"
+              type="datetime-local"
             />
           </label>
           <label className="block text-sm font-medium text-slate-700">
-            Tracking URL
-            <input
-              className={fieldBaseClass}
-              name="trackingUrl"
-              placeholder="Paste the courier tracking URL"
-              type="url"
-            />
-          </label>
-        </>
-      ) : null}
-
-      {["14", "16"].includes(stage.key) ? (
-        <>
-          <label className="block text-sm font-medium text-slate-700">
-            Next follow-up
-            <input className={fieldBaseClass} name="followUpAt" type="datetime-local" />
+            Client response
+            <select className={fieldBaseClass} defaultValue="" name="clientResponse">
+              <option disabled value="">
+                Select response
+              </option>
+              <option value="approved">Approved</option>
+              <option value="feedback_revision">Feedback / Revision</option>
+              <option value="rejected">Rejected</option>
+            </select>
           </label>
           <label className="block text-sm font-medium text-slate-700">
-            Note
+            Notes
             <textarea
               className={fieldBaseClass}
               name="notes"
-              placeholder="Log call notes, objections, or next steps."
+              placeholder="Add client feedback, revision notes, or rejection reason."
               rows={4}
             />
           </label>
@@ -293,8 +348,7 @@ export function StageActionForm({
       </Button>
       {!canAct ? (
         <p className="text-sm text-slate-500">
-          This stage is owned by another role. You can review history, but not submit
-          the action.
+          This stage is read-only for your role.
         </p>
       ) : null}
     </form>

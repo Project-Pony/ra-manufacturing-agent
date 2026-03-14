@@ -38,8 +38,8 @@ export default async function PipelinePage({ searchParams }: PipelinePageProps) 
           Pipeline Board
         </h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-          Full kanban visibility across all 20 workflow stages, with SLA visibility
-          and lead-safe detail access.
+          Track lead intake, parallel briefing and approvals, sample preparation,
+          dispatch, and final client approval in one view.
         </p>
       </div>
 

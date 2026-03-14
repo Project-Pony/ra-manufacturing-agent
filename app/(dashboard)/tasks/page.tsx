@@ -36,12 +36,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           <p className="text-xs uppercase tracking-[0.22em] text-blue-600">
             Role Queue
           </p>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-950">My Tasks</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-            Tasks are sorted by urgency and only expose information permitted for your
-            role.
-          </p>
-        </div>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-950">My Tasks</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+          Tasks are sorted by urgency and limited to the work explicitly assigned to
+          your role.
+        </p>
+      </div>
         <Badge variant="blue">{tasks.length} active tasks</Badge>
       </div>
 
