@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
 
 type BadgeVariant = "neutral" | "blue" | "green" | "yellow" | "red";
@@ -11,7 +13,7 @@ const variantClasses: Record<BadgeVariant, string> = {
 };
 
 interface BadgeProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   variant?: BadgeVariant;
 }

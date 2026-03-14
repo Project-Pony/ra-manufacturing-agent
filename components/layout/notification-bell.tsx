@@ -24,7 +24,7 @@ export function NotificationBell({ notifications, role }: NotificationBellProps)
   );
 
   const targetPath = role
-    ? role === "admin" || role === "sales_manager"
+    ? role === "business_owner" || role === "sales_manager"
       ? ROLE_HOME_PATHS.sales_manager
       : ROLE_HOME_PATHS[role]
     : "/login";

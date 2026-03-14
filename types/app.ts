@@ -1,50 +1,49 @@
 export type AppRole =
-  | "admin"
+  | "business_owner"
   | "sales_manager"
   | "sales_executive"
   | "rnd_manager"
   | "packaging_manager";
 
-export type LeadStatus = "active" | "closed" | "on_hold";
+export type LeadStatus =
+  | "active"
+  | "awaiting_client_approval"
+  | "client_approved_ready_for_pi"
+  | "revision_requested"
+  | "closed_rejected";
+
 export type BriefType = "formulation" | "packaging";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type SampleType = BriefType;
-export type ProformaStatus = "draft" | "confirmed" | "sent_to_client";
 export type SlaStatus = "on_time" | "at_risk" | "breached";
 export type SamplePreparationStatus = "Not Started" | "In Progress" | "Ready";
+export type ClientResponseStatus = "pending" | "approved" | "feedback_revision" | "rejected";
 export type StageGroup =
-  | "New"
-  | "Briefing"
-  | "In Production"
+  | "Lead Intake"
+  | "Briefing & Approval"
+  | "Sample Prep"
   | "Dispatch"
-  | "Follow-Up"
-  | "Closing";
+  | "Awaiting Client Approval";
 export type StageKey =
   | "0"
   | "1"
-  | "2"
-  | "2.1"
+  | "2A"
+  | "2B"
   | "3"
-  | "3.1"
-  | "4"
-  | "5"
+  | "4A"
+  | "4B"
+  | "5A"
+  | "5A_CONFIRM"
+  | "5B"
+  | "5B_CONFIRM"
   | "6"
-  | "7"
+  | "6_ACK"
   | "7.1"
+  | "7.2"
+  | "7.3"
+  | "7.4"
   | "8"
-  | "8.1"
-  | "9"
-  | "9.1"
-  | "10"
-  | "11"
-  | "12"
-  | "13"
-  | "14"
-  | "15"
-  | "16"
-  | "17"
-  | "18"
-  | "19";
+  | "9";
 
 export interface AppUser {
   id: string;
@@ -62,13 +61,16 @@ export interface Lead {
   clientEmail: string | null;
   clientWhatsapp: string | null;
   requirementDetails: string;
+  referenceUrls: string[];
   currentStage: StageKey;
   assignedSalesManager: string | null;
   assignedSalesExecutive: string | null;
   createdAt: string;
   status: LeadStatus;
-  nextFollowUpDate?: string | null;
-  lastAction?: string | null;
+  sampleDispatchDate: string | null;
+  expectedDeliveryDate: string | null;
+  clientResponseStatus: ClientResponseStatus;
+  clientResponseNotes: string | null;
 }
 
 export interface StageLog {
@@ -90,10 +92,12 @@ export interface Brief {
   leadId: string;
   briefType: BriefType;
   documentUrl: string;
-  deadline: string | null;
+  requestedDeadline: string | null;
+  committedTimeline: string | null;
   submittedBy: string;
   approvedBy: string | null;
   approvalStatus: ApprovalStatus;
+  reviewComment: string | null;
   createdAt: string;
 }
 
@@ -101,24 +105,17 @@ export interface Sample {
   id: string;
   leadId: string;
   sampleType: SampleType;
-  dispatchedBy: string;
+  prepStatus: SamplePreparationStatus;
+  committedReadyAt: string | null;
+  dispatchedBy: string | null;
   dispatchedAt: string | null;
   receivedConfirmedBy: string | null;
   receivedConfirmedAt: string | null;
   courierDocket: string | null;
-  trackingNumber: string | null;
+  trackingReference: string | null;
   trackingUrl: string | null;
   dispatchNoteUrl: string | null;
-}
-
-export interface ProformaInvoice {
-  id: string;
-  leadId: string;
-  createdBy: string;
-  documentUrl: string;
-  status: ProformaStatus;
-  createdAt: string;
-  sentAt: string | null;
+  handedToSecurityAt: string | null;
 }
 
 export interface NotificationItem {
@@ -138,7 +135,7 @@ export interface StageDefinition {
   group: StageGroup;
   slaLabel: string;
   actionLabel: string;
-  nextKey: StageKey | null;
+  systemDriven?: boolean;
 }
 
 export interface DashboardSnapshot {
@@ -149,7 +146,6 @@ export interface DashboardSnapshot {
   stageLogs: StageLog[];
   briefs: Brief[];
   samples: Sample[];
-  invoices: ProformaInvoice[];
   notifications: NotificationItem[];
   users: AppUser[];
 }
@@ -171,6 +167,5 @@ export interface LeadBundle {
   stageLogs: StageLog[];
   briefs: Brief[];
   samples: Sample[];
-  invoices: ProformaInvoice[];
   notifications: NotificationItem[];
 }

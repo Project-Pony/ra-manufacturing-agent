@@ -2,20 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, KanbanSquare, LayoutGrid, ShieldCheck } from "lucide-react";
+import { ClipboardList, KanbanSquare, LayoutGrid } from "lucide-react";
+import type { ElementType } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { ROLE_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { AppRole, AppUser } from "@/types/app";
 
-const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string; icon: React.ElementType }>> =
+const NAV_BY_ROLE: Record<AppRole, Array<{ href: string; label: string; icon: ElementType }>> =
   {
-    admin: [
+    business_owner: [
       { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
-      { href: "/tasks", label: "My Tasks", icon: ClipboardList },
-      { href: "/tracker", label: "Sales Tracker", icon: LayoutGrid },
-      { href: "/admin", label: "Admin", icon: ShieldCheck }
+      { href: "/tracker", label: "Sales Tracker", icon: LayoutGrid }
     ],
     sales_manager: [
       { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },

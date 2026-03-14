@@ -17,8 +17,8 @@ function setDemoCookies(role: string, userId: string) {
 }
 
 export function LoginForm() {
-  const [email, setEmail] = useState(MOCK_USERS[1].email);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [email, setEmail] = useState<string>(MOCK_USERS[1].email);
+  const [password, setPassword] = useState<string>(DEMO_PASSWORD);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 

@@ -76,7 +76,7 @@ export function SLABadge({ startedAt, deadlineAt, className }: SLABadgeProps) {
     return () => window.clearInterval(timer);
   }, [deadlineAt]);
 
-  const tone = useMemo(() => getSlaTone(startedAt, deadlineAt), [startedAt, deadlineAt, label]);
+  const tone = useMemo(() => getSlaTone(startedAt, deadlineAt), [startedAt, deadlineAt]);
 
   return (
     <Badge className={className} variant={tone}>
